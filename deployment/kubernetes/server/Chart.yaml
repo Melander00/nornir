@@ -1,0 +1,5 @@
+apiVersion: v2
+name: time-reporting
+description: A simple web service for reporting time.
+version: 1.0.0
+appVersion: "1.0"

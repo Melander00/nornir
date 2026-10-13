@@ -1,0 +1,70 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: {{ .Values.postgres.host }}
+spec:
+  serviceName: {{ .Values.postgres.host }}
+  replicas: 1
+
+  selector:
+    matchLabels:
+      app: {{ .Values.postgres.host }}
+
+  template:
+    metadata:
+      labels:
+        app: {{ .Values.postgres.host }}
+
+    spec:
+      containers:
+        - name: postgres
+
+          image: "postgres:17"
+          imagePullPolicy: IfNotPresent
+
+          ports:
+            - containerPort: 5432
+
+          env:
+            - name: POSTGRES_DB
+              value: {{ .Values.postgres.database }}
+
+            - name: POSTGRES_USER
+              value: {{ .Values.postgres.username }}
+
+            - name: POSTGRES_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.postgres.existingSecret }}
+                  key: {{ .Values.postgres.passwordKey }}
+
+            - name: PGDATA
+              value: /var/lib/postgresql/data/pgdata
+
+          volumeMounts:
+            - name: postgres-storage
+              mountPath: /var/lib/postgresql/data
+
+  volumeClaimTemplates:
+    - metadata:
+        name: postgres-storage
+      spec:
+        accessModes:
+          - ReadWriteOnce
+        resources:
+          requests:
+            storage: 1Gi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ .Values.postgres.host }}
+  labels:
+    app: {{ .Values.postgres.host }}
+spec:
+  type: ClusterIP
+  ports:
+  - port: {{ .Values.postgres.port }}
+    targetPort: 5432
+  selector:
+    app: {{ .Values.postgres.host }}

@@ -1,0 +1,23 @@
+app:
+  name: server
+  replicas: 1
+  port: 3000
+
+# Development domain - change to your assigned domain
+domain: time.tasbes.online
+path: /api
+
+env: prod
+
+# Container image
+image:
+  repository: time-reporting
+  tag: ""
+
+postgres:
+  database: postgres
+  username: postgres
+  existingSecret: db-creds
+  passwordKey: password
+  host: time-reporting-db
+  port: 5432

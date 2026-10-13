@@ -1,0 +1,27 @@
+model User {
+    id       String     @id @default(nanoid())
+    subject  String     @unique
+    name     String?
+    username String?
+    picture  String?
+    //
+    entries  LogEntry[]
+    active   ActiveLog?
+}
+
+model LogEntry {
+    id     String   @id @default(uuid(7))
+    userId String
+    note   String   @default("")
+    from   DateTime
+    to     DateTime
+    //
+    user   User     @relation(fields: [userId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+}
+
+model ActiveLog {
+    id     String   @id @default(uuid(7))
+    userId String   @unique
+    from   DateTime
+    user   User     @relation(fields: [userId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+}
