@@ -277,7 +277,7 @@ r.get("/active", async (req, res) => {
 });
 
 const postActiveSchema = z.object({
-    from: z.date().nonoptional(),
+    from: z.coerce.date().nonoptional(),
 });
 r.post("/active", async (req, res) => {
     const subject = enforceAuth(req.session);
@@ -290,6 +290,7 @@ r.post("/active", async (req, res) => {
     const { data, success } = postActiveSchema.safeParse(body);
 
     if (!success) {
+        console.error(body)
         res.status(400).send("Bad requests");
         return;
     }
@@ -317,8 +318,8 @@ r.post("/active", async (req, res) => {
 });
 
 const postFinishActiveSchema = z.object({
-    id: z.uuidv7().nonoptional(),
-    to: z.date().nonoptional(),
+    id: z.string().nonoptional(),
+    to: z.coerce.date().nonoptional(),
     note: z.string().optional(),
 });
 r.post("/active/finish", async (req, res) => {
@@ -329,9 +330,10 @@ r.post("/active/finish", async (req, res) => {
     }
 
     const body = req.body;
-    const { data, success } = postFinishActiveSchema.safeParse(body);
+    const { data, success, error } = postFinishActiveSchema.safeParse(body);
 
     if (!success) {
+        console.error(body, error)
         res.status(400).send("Bad requests");
         return;
     }

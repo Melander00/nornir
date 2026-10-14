@@ -12,6 +12,7 @@ type TimeWheelProps = {
     wrap?: boolean;
     children?: ReactNode;
     formatValue?: (minutes: number) => string;
+    readOnly?: boolean;
 };
 
 const DEFAULT_FORMAT = (minutes: number) => {
@@ -38,6 +39,7 @@ export function TimeWheel({
     wrap = true,
     children,
     formatValue = DEFAULT_FORMAT,
+    readOnly = false,
 }: TimeWheelProps) {
     const wheelRef = useRef<HTMLDivElement>(null);
     const dragging = useRef(false);
@@ -45,7 +47,7 @@ export function TimeWheel({
     const accumulatedAngle = useRef(0);
     const currentValue = useRef(value);
 
-    const rotation = (value % 60) * 6; 
+    const rotation = (value % 60) * 6;
 
     // Keep pointer interactions synchronized with controlled props.
     currentValue.current = value;
@@ -75,7 +77,7 @@ export function TimeWheel({
     };
 
     const handlePointerDown = (event: PointerEvent<HTMLDivElement>) => {
-        if (disabled || event.button !== 0) return;
+        if (disabled || readOnly || event.button !== 0) return;
 
         dragging.current = true;
         accumulatedAngle.current = 0;
@@ -84,7 +86,7 @@ export function TimeWheel({
     };
 
     const handlePointerMove = (event: PointerEvent<HTMLDivElement>) => {
-        if (!dragging.current || disabled) return;
+        if (!dragging.current || disabled || readOnly) return;
 
         const angle = getAngle(event);
         accumulatedAngle.current += normalizeAngle(angle - lastAngle.current);
@@ -107,14 +109,14 @@ export function TimeWheel({
     };
 
     const handleWheel = (event: WheelEvent<HTMLDivElement>) => {
-        if (disabled) return;
+        if (disabled || readOnly) return;
 
         event.preventDefault();
         updateValue(event.deltaY < 0 ? step : -step);
     };
 
     const handleKeyDown = (event: KeyboardEvent<HTMLDivElement>) => {
-        if (disabled) return;
+        if (disabled || readOnly) return;
 
         switch (event.key) {
             case "ArrowUp":
@@ -148,8 +150,8 @@ export function TimeWheel({
                 aria-valuemax={max}
                 aria-valuenow={value}
                 aria-valuetext={formatValue(value)}
-                aria-disabled={disabled}
-                tabIndex={disabled ? -1 : 0}
+                aria-disabled={disabled || readOnly}
+                tabIndex={disabled || readOnly ? -1 : 0}
                 onPointerDown={handlePointerDown}
                 onPointerMove={handlePointerMove}
                 onPointerUp={handlePointerUp}
@@ -159,18 +161,24 @@ export function TimeWheel({
                 className={[
                     "relative flex h-72 w-72 select-none items-center",
                     "justify-center rounded-full border-8 border-slate-200",
-                    "bg-linear-to-br from-slate-50 to-slate-200 shadow-inner",
+                    "bg-linear-to-br from-slate-50 to-slate-200 ",
                     "touch-none outline-none focus-visible:ring-4",
                     "focus-visible:ring-blue-500/40",
                     disabled ? "cursor-not-allowed opacity-50" : "cursor-grab active:cursor-grabbing",
+                    readOnly ? "cursor-not-allowed border-slate-100 from-slate-50 to-slate-100" : ""
                 ].join(" ")}
             >
                 {/* Decorative dial */}
-                <div className="pointer-events-none absolute inset-3 rounded-full border border-slate-300" />
                 <div
-                    className="pointer-events-none absolute inset-3 rounded-full border border-slate-300"
+                    className={[
+                        "pointer-events-none absolute inset-3 rounded-full border border-slate-300",
+                        readOnly ? "opacity-10 border-slate-100" : "",
+                    ].join(" ")}
+                />
+                <div
+                    className={["pointer-events-none absolute inset-3 rounded-full border border-slate-300", readOnly ? "opacity-50" : "",].join(" ")}
                     style={{ transform: `rotate(${rotation}deg)` }}
-                    >
+                >
                     <div className="absolute inset-x-0 top-0 mx-auto h-3 w-1.5 rounded-full bg-blue-600" />
                 </div>
 
