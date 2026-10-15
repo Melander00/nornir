@@ -5,6 +5,7 @@ import minMax from "dayjs/plugin/minMax.js";
 import relativeTime from "dayjs/plugin/relativeTime.js";
 import timezone from "dayjs/plugin/timezone.js";
 import utc from "dayjs/plugin/utc.js";
+import weekOfYear from "dayjs/plugin/weekOfYear.js";
 
 dayjs.extend(utc)
 dayjs.extend(timezone)
@@ -13,6 +14,7 @@ dayjs.extend(advancedFormat)
 dayjs.extend(duration)
 dayjs.extend(relativeTime)
 dayjs.extend(minMax)
+dayjs.extend(weekOfYear)
 
 const locale: Required<ILocale> = {
   name: 'sv',

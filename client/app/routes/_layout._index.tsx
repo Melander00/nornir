@@ -105,24 +105,22 @@ export default function LandingPage() {
     }
 
     useEffect(() => {
+        if (!isRunning) return;
 
-        let timeout: ReturnType<typeof setTimeout>
+        const update = () => {
+            setStartTime(getCurrentMinutes());
 
-        function updateStartTime() {
-            if (isRunning) {
-                setStartTime(getCurrentMinutes)            
-                timeout = setTimeout(updateStartTime, 10000)
-            }
-        }
+            timeout = setTimeout(update, 10000);
+        };
 
-        if(isRunning) {
-            updateStartTime()
-        }
+        let timeout: ReturnType<typeof setTimeout>;
 
-        () => {
-            clearTimeout(timeout)
-        }
-    }, [isRunning])
+        update();
+
+        return () => {
+            clearTimeout(timeout);
+        };
+    }, [isRunning]);
 
     
 
@@ -135,8 +133,10 @@ export default function LandingPage() {
 
                         <strong>{dayts(active.from).format("HH:mm")} - ?</strong>
 
-                        <p>Notes:</p>
-                        <textarea className="border-2" value={note} onChange={(e) => setNote(e.target.value)}></textarea>
+                        <div className="flex flex-col">
+                            <p>Notes:</p>
+                            <textarea rows={3} className="border-2 border-indigo-700 rounded-md resize-none" value={note} onChange={(e) => setNote(e.target.value)}></textarea>
+                        </div>
                     </div>
                 </>
             ) : (
