@@ -1,5 +1,6 @@
-import { useState, useTransition } from "react";
+import { useEffect, useState, useTransition } from "react";
 import useSWR from "swr";
+import { useNotifications } from "~/components/notifications/useNotifications";
 import { TimeWheel } from "~/components/timewheel/TimeWheel";
 import { dayts } from "~/lib/dayjs";
 import { fetcher } from "~/lib/fetcher";
@@ -38,9 +39,15 @@ export default function LandingPage() {
 
     const isRunning = active !== undefined;
 
+    
+
+    
+
     const [startTime, setStartTime] = useState(getCurrentMinutes);
     const [isSaving, startSaving] = useTransition();
     const [note, setNote] = useState("");
+
+    const {addNotification} = useNotifications()
 
     async function handleAction() {
         if (isRunning) {
@@ -61,6 +68,8 @@ export default function LandingPage() {
                     alert(`${res.status} ${await res.text()}`);
                     return;
                 }
+
+                addNotification("Saved!", "Stored your log.", "success")
 
                 const log = await res.json();
                 mutateActive(undefined);
@@ -91,15 +100,38 @@ export default function LandingPage() {
 
             const act = await res.json();
             mutateActive(act);
+            setStartTime(getCurrentMinutes)
         });
     }
 
+    useEffect(() => {
+
+        let timeout: ReturnType<typeof setTimeout>
+
+        function updateStartTime() {
+            if (isRunning) {
+                setStartTime(getCurrentMinutes)            
+                timeout = setTimeout(updateStartTime, 10000)
+            }
+        }
+
+        if(isRunning) {
+            updateStartTime()
+        }
+
+        () => {
+            clearTimeout(timeout)
+        }
+    }, [isRunning])
+
+    
+
     return (
-        <div className="flex flex-col items-center h-full">
+        <div className="flex flex-col items-center h-full pt-5 gap-8">
             {isRunning ? (
                 <>
-                    <div className="flex flex-col">
-                        <h3>You have an active session</h3>
+                    <div className="flex flex-col items-center gap-2">
+                        <h1 className="text-5xl">Session</h1>
 
                         <strong>{dayts(active.from).format("HH:mm")} - ?</strong>
 
@@ -108,7 +140,12 @@ export default function LandingPage() {
                     </div>
                 </>
             ) : (
-                ""
+                (
+                    <div className="flex flex-col items-center gap-2">
+                        <h1 className="text-5xl">Spin</h1>
+                        <p>and choose time</p>
+                    </div>
+                )
             )}
 
             <TimeWheel
