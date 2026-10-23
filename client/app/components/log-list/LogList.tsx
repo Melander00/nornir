@@ -1,26 +1,31 @@
-import { calculateHours, getDayOfWeek } from "~/lib/logs";
+import { calculateHours, formatHours, formatTimeRange } from "~/lib/logs";
 import type { LogEntry } from "~/types";
 
 export default function LogList({
-    logs
+    logs,
+    onSelect,
 }: {
     logs?: LogEntry[]
+    onSelect?: (log: LogEntry) => void
 }) {
     return(
-        <>
-
-        <div className="flex flex-col px-4">
+        <ul className="flex flex-col">
 
             {logs?.map(l => (
-                <div key={l.id} className="flex flex-row justify-between p-1 odd:bg-gray-200 even:bg-gray-50 items-center gap-3">
-                    <span className="flex-1">{getDayOfWeek(l)}</span>
-                    <span className="flex-5">{l.note}</span>
-                    <span className="flex-1 text-right">{calculateHours(l)} h</span>
-                </div>
+                <li key={l.id} className="odd:bg-gray-100 even:bg-gray-50">
+                    <button
+                        type="button"
+                        onClick={() => onSelect?.(l)}
+                        disabled={!onSelect}
+                        className="flex w-full flex-row items-center gap-3 p-2 text-left enabled:cursor-pointer enabled:hover:bg-indigo-50"
+                    >
+                        <span className="w-28 shrink-0 text-sm tabular-nums text-gray-600">{formatTimeRange(l)}</span>
+                        <span className={`flex-1 truncate ${l.note ? "" : "italic text-gray-400"}`}>{l.note || "No note"}</span>
+                        <span className="shrink-0 text-right tabular-nums">{formatHours(calculateHours(l))}</span>
+                    </button>
+                </li>
             ))}
 
-        </div>
-        
-        </>
+        </ul>
     )
 }

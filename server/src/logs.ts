@@ -118,8 +118,8 @@ r.get("/", async (req, res, next) => {
 });
 
 const postCreateLogSchema = z.object({
-    from: z.date().nonoptional(),
-    to: z.date().nonoptional(),
+    from: z.coerce.date().nonoptional(),
+    to: z.coerce.date().nonoptional(),
     note: z.string().optional(),
 });
 r.post("/create", async (req, res) => {
@@ -150,6 +150,7 @@ r.post("/create", async (req, res) => {
                 to: data.to
             }
         })
+        res.json(log)
     } catch(e) {
         if (e instanceof Error) {
             res.status(500).send(e.message);
@@ -161,7 +162,7 @@ r.post("/create", async (req, res) => {
 
 const postEditLogSchema = z.object({
     id: z.uuidv7().nonoptional(),
-    from: z.date().optional(),
+    from: z.coerce.date().optional(),
     to: z.date().optional(),
     note: z.string().optional(),
 });
@@ -191,7 +192,7 @@ r.put("/edit", async (req, res) => {
             data: {
                 from: data.from || Prisma.skip,
                 to: data.to || Prisma.skip,
-                note: data.note || Prisma.skip,
+                note: data.note ?? Prisma.skip,
             },
         });
 
@@ -244,6 +245,7 @@ r.delete("/:id", async (req, res) => {
                 },
             },
         });
+        res.status(204).end()
     } catch (e) {
         if (e instanceof Error) {
             res.status(500).send(e.message);

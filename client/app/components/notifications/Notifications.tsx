@@ -29,7 +29,7 @@ function NotificationComponent({
       }`}
     >
       <div className={styles.title}>
-        {notification.status}
+        {notification.title}
       </div>
 
       <div className={styles.message}>

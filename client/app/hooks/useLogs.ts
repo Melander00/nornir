@@ -3,16 +3,20 @@ import { fetcher } from "~/lib/fetcher";
 import type { LogEntry } from "~/types";
 
 type UseLogsOptions = {
-    limit?: string,
-    page?: string,
-    from?: string,
-    to?: string,
+    limit?: number,
+    page?: number,
+    start?: string,
+    end?: string,
 }
 
-export function useLogs(options?: UseLogsOptions) {
-    const query = new URLSearchParams(options)
-    const url = `/api/logs?${query}`
-    const {data: logs, isLoading, mutate: mutateLogs} = useSWR<LogEntry[]>(url, fetcher)
+export function useLogs(options: UseLogsOptions = {}) {
+    const query = new URLSearchParams()
+    for (const [key, value] of Object.entries(options)) {
+        if (value !== undefined) query.set(key, String(value))
+    }
 
-    return {logs, mutateLogs, isLoading}
+    const url = `/api/logs?${query}`
+    const {data: logs, error, isLoading, mutate: mutateLogs} = useSWR<LogEntry[]>(url, fetcher)
+
+    return {logs, error, mutateLogs, isLoading}
 }

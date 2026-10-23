@@ -1,109 +1,111 @@
 import { useEffect, useState, useTransition } from "react";
 import useSWR from "swr";
+import { LogEditor } from "~/components/log-editor/LogEditor";
 import { useNotifications } from "~/components/notifications/useNotifications";
 import { TimeWheel } from "~/components/timewheel/TimeWheel";
+import { revalidateLogs, finishActive, startActive } from "~/lib/api";
 import { dayts } from "~/lib/dayjs";
-import { fetcher } from "~/lib/fetcher";
-import { redirect } from "~/lib/redirect";
-import type { ActiveLog, User } from "~/types";
+import { errorMessage, fetcher } from "~/lib/fetcher";
+import type { ActiveLog } from "~/types";
 
 function getCurrentMinutes() {
     const now = new Date();
     return now.getHours() * 60 + now.getMinutes();
 }
 
-export default function LandingPage() {
-    const { data: user, error: userError } = useSWR<User>("/api/me", fetcher);
-    const {
-        data: active,
-        isLoading: activeLoading,
-        mutate: mutateActive,
-    } = useSWR<ActiveLog | undefined>("/api/logs/active", async (url: string) => {
-        const res = await fetch(url);
-        // If the status code is not in the range 200-299,
-        // we still try to parse and throw it.
-        if (!res.ok) {
-            return undefined;
-        }
+function formatElapsed(minutes: number) {
+    const hh = Math.floor(minutes / 60);
+    const mm = minutes % 60;
+    return hh > 0 ? `${hh} h ${mm} min` : `${mm} min`;
+}
 
-        const json = await res.json();
+// Keep the note of a running session across page reloads.
+function noteKey(activeId: string) {
+    return `nornir:note:${activeId}`;
+}
 
-        if (json === null) return undefined;
-
-        return json;
-    });
-
-    if (userError) {
-        redirect("/login");
+function loadNote(activeId: string) {
+    try {
+        return localStorage.getItem(noteKey(activeId)) ?? "";
+    } catch {
+        return "";
     }
+}
 
-    const isRunning = active !== undefined;
+function saveNote(activeId: string, note: string) {
+    try {
+        if (note) localStorage.setItem(noteKey(activeId), note);
+        else localStorage.removeItem(noteKey(activeId));
+    } catch {}
+}
 
-    
+export default function LandingPage() {
+    // The server answers null when no session is running.
+    const { data: active, mutate: mutateActive } = useSWR<ActiveLog | null>("/api/logs/active", fetcher);
 
-    
+    const isRunning = !!active;
 
     const [startTime, setStartTime] = useState(getCurrentMinutes);
     const [isSaving, startSaving] = useTransition();
     const [note, setNote] = useState("");
+    const [isEditorOpen, setIsEditorOpen] = useState(false);
 
     const {addNotification} = useNotifications()
 
+    useEffect(() => {
+        if (active) setNote(loadNote(active.id));
+    }, [active?.id]);
+
+    function handleNoteChange(value: string) {
+        setNote(value);
+        if (active) saveNote(active.id, value);
+    }
+
     async function handleAction() {
-        if (isRunning) {
+        if (active) {
             startSaving(async () => {
-                const res = await fetch("/api/logs/active/finish", {
-                    method: "post",
-                    headers: {
-                        "content-type": "application/json",
-                    },
-                    body: JSON.stringify({
+                try {
+                    await finishActive({
                         id: active.id,
                         to: dayts().toDate(),
                         note: note,
-                    }),
-                });
-
-                if (!res.ok) {
-                    alert(`${res.status} ${await res.text()}`);
+                    });
+                } catch (e) {
+                    addNotification("Could not save", errorMessage(e), "error");
                     return;
                 }
 
+                saveNote(active.id, "");
+                setNote("");
                 addNotification("Saved!", "Stored your log.", "success")
 
-                const log = await res.json();
-                mutateActive(undefined);
+                await mutateActive(null, { revalidate: false });
+                await revalidateLogs();
             });
             return;
         }
 
+        const hh = Math.floor(startTime / 60);
+        const mm = startTime - hh * 60;
+        const from = dayts().startOf("minute").hour(hh).minute(mm);
+
+        if (from.isAfter(dayts())) {
+            addNotification("Can't start", "The start time can't be in the future.", "warning");
+            return;
+        }
+
         startSaving(async () => {
-            const hh = Math.floor(startTime / 60);
-            const mm = startTime - hh * 60;
-
-            const d = dayts().hour(hh).minute(mm);
-
-            const res = await fetch("/api/logs/active", {
-                method: "post",
-                headers: {
-                    "content-type": "application/json",
-                },
-                body: JSON.stringify({
-                    from: d.toDate(),
-                }),
-            });
-
-            if (!res.ok) {
-                alert(`${res.status} ${res.statusText}`);
-                return;
+            try {
+                const act = await startActive(from.toDate());
+                await mutateActive(act, { revalidate: false });
+                setStartTime(getCurrentMinutes)
+            } catch (e) {
+                addNotification("Could not start", errorMessage(e), "error");
             }
-
-            const act = await res.json();
-            mutateActive(act);
-            setStartTime(getCurrentMinutes)
         });
     }
 
+    // While running, the wheel shows the current time, which becomes the end time.
     useEffect(() => {
         if (!isRunning) return;
 
@@ -122,30 +124,26 @@ export default function LandingPage() {
         };
     }, [isRunning]);
 
-    
-
     return (
-        <div className="flex flex-col items-center h-full pt-5 gap-8">
-            {isRunning ? (
-                <>
-                    <div className="flex flex-col items-center gap-2">
-                        <h1 className="text-5xl">Session</h1>
+        <div className="flex flex-col items-center h-full pt-5 gap-8 px-4">
+            {active ? (
+                <div className="flex flex-col items-center gap-2">
+                    <h1 className="text-5xl">Session</h1>
 
-                        <strong>{dayts(active.from).format("HH:mm")} - ?</strong>
+                    <strong className="tabular-nums">
+                        {dayts(active.from).format("HH:mm")} – now · {formatElapsed(dayts().diff(active.from, "minute"))}
+                    </strong>
 
-                        <div className="flex flex-col">
-                            <p>Notes:</p>
-                            <textarea rows={3} className="border-2 border-indigo-700 rounded-md resize-none" value={note} onChange={(e) => setNote(e.target.value)}></textarea>
-                        </div>
-                    </div>
-                </>
+                    <label className="flex flex-col">
+                        Notes:
+                        <textarea rows={3} className="border-2 border-indigo-700 rounded-md resize-none" value={note} onChange={(e) => handleNoteChange(e.target.value)}></textarea>
+                    </label>
+                </div>
             ) : (
-                (
-                    <div className="flex flex-col items-center gap-2">
-                        <h1 className="text-5xl">Spin</h1>
-                        <p>and choose time</p>
-                    </div>
-                )
+                <div className="flex flex-col items-center gap-2">
+                    <h1 className="text-5xl">Spin</h1>
+                    <p>and choose time</p>
+                </div>
             )}
 
             <TimeWheel
@@ -157,6 +155,34 @@ export default function LandingPage() {
                 disabled={isSaving}
                 readOnly={isRunning}
             />
+
+            <button
+                type="button"
+                onClick={() => setIsEditorOpen(true)}
+                className={[
+                    "flex flex-row items-center gap-2 rounded-lg border-2 border-indigo-700",
+                    "bg-white px-5 py-2.5 text-sm font-medium text-indigo-700 shadow-sm",
+                    "transition hover:bg-indigo-50 active:scale-[0.98]",
+                    "focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-indigo-500/40",
+                ].join(" ")}
+            >
+                <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    width="16"
+                    height="16"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2.5"
+                    strokeLinecap="round"
+                    aria-hidden="true"
+                >
+                    <path d="M12 5v14M5 12h14" />
+                </svg>
+                Log time manually
+            </button>
+
+            <LogEditor open={isEditorOpen} onClose={() => setIsEditorOpen(false)}/>
         </div>
     );
 }
