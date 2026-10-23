@@ -12,4 +12,4 @@ env: prod
 # Container image
 image:
   repository: time-reporting
-  tag: ""
+  tag: "fb765eb"
