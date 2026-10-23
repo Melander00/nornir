@@ -11,5 +11,5 @@ env: prod
 
 # Container image
 image:
-  repository: time-reporting
+  repository: ghcr.io/melander00/nornir-client
   tag: "fb765eb"
