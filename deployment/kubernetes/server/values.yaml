@@ -39,7 +39,7 @@ envs:
 # Container image
 image:
   repository: time-reporting
-  tag: ""
+  tag: "916b8bc"
 
 postgres:
   database: postgres
