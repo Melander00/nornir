@@ -38,7 +38,7 @@ envs:
 
 # Container image
 image:
-  repository: time-reporting
+  repository: ghcr.io/melander00/nornir-server
   tag: "916b8bc"
 
 postgres:
