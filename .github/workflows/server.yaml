@@ -50,27 +50,27 @@ jobs:
           IMAGE_NAME=ghcr.io/$OWNER_LC/nornir-server:${IMAGE_TAG}
 
           echo "Building image: $IMAGE_NAME"
-          docker build -t $IMAGE_NAME ./frontend
+          docker build -t $IMAGE_NAME ./server
           docker push $IMAGE_NAME
 
           echo "IMAGE_TAG=$IMAGE_TAG" >> $GITHUB_ENV
 
-      # - name: Update local git repo
-      #   run: |
-      #     git pull
+      - name: Update local git repo
+        run: |
+          git pull
 
 
-      # # 5. Update Helm values for dev
-      # - name: Update dev environment values
-      #   run: |
-      #     sed -i "s/tag:.*/tag: \"${IMAGE_TAG}\"/" kubernetes/frontend/values/dev-values.yaml
+      # 5. Update Helm values for dev
+      - name: Update dev environment values
+        run: |
+          sed -i "s/tag:.*/tag: \"${IMAGE_TAG}\"/" deployment/kubernetes/server/values.yaml
 
-      # # 6. Commit and push the updated values file
-      # - name: Commit changes
-      #   run: |
-      #     git config user.email "github-actions[bot]@users.noreply.github.com"
-      #     git config user.name "github-actions[bot]"
-      #     git pull
-      #     git add kubernetes/frontend/values/dev-values.yaml
-      #     git commit -m "Update frontend image to ${IMAGE_TAG}"
-      #     git push
+      # 6. Commit and push the updated values file
+      - name: Commit changes
+        run: |
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git config user.name "github-actions[bot]"
+          git pull
+          git add kubernetes/frontend/values/dev-values.yaml
+          git commit -m "Update frontend image to ${IMAGE_TAG}"
+          git push

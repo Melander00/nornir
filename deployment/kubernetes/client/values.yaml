@@ -1,0 +1,15 @@
+app:
+  name: client
+  replicas: 1
+  port: 80
+
+# Development domain - change to your assigned domain
+domain: time.tasbes.online
+path: /
+
+env: prod
+
+# Container image
+image:
+  repository: time-reporting
+  tag: ""

@@ -9,6 +9,33 @@ path: /api
 
 env: prod
 
+envs:
+  - name: GITLAB_ISSUER
+    valueFrom:
+      secretKeyRef:
+        name: gitlab
+        key: issuer
+  - name: GITLAB_CLIENT_ID
+    valueFrom:
+      secretKeyRef:
+        name: gitlab
+        key: client
+  - name: GITLAB_CLIENT_SECRET
+    valueFrom:
+      secretKeyRef:
+        name: gitlab
+        key: secret
+  - name: FRONTEND_URL
+    value: "https://time.tasbes.online"
+  - name: BACKEND_URL
+    value: "https://time.tasbes.online/api"
+
+  - name: SESSION_SECRET
+    valueFrom:
+      secretKeyRef:
+        name: session-secret
+        key: secret
+
 # Container image
 image:
   repository: time-reporting
