@@ -161,7 +161,7 @@ r.post("/create", async (req, res) => {
 });
 
 const postEditLogSchema = z.object({
-    id: z.uuidv7().nonoptional(),
+    id: z.string().nonoptional(),
     from: z.coerce.date().optional(),
     to: z.date().optional(),
     note: z.string().optional(),
