@@ -39,7 +39,7 @@ envs:
 # Container image
 image:
   repository: ghcr.io/melander00/nornir-server
-  tag: "4fb64ac"
+  tag: "b3cc1f1"
 
 postgres:
   database: postgres
