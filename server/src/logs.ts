@@ -163,7 +163,7 @@ r.post("/create", async (req, res) => {
 const postEditLogSchema = z.object({
     id: z.string().nonoptional(),
     from: z.coerce.date().optional(),
-    to: z.date().optional(),
+    to: z.coerce.date().optional(),
     note: z.string().optional(),
 });
 r.put("/edit", async (req, res) => {
